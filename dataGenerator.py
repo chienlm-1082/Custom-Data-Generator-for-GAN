@@ -6,7 +6,10 @@ import numpy as np
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, Dense, Flatten, MaxPooling2D, Dropout
 from tensorflow.keras.preprocessing.image import load_img
+import os
+from tqdm import tqdm
 
+train_path = os.listdir('gen/')
 
 # load data mnist
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -63,39 +66,16 @@ class DataGenerator(Sequence):
             Y[i,] = load_img(self.tar_path+self.img_paths[ID], target_size=self.dim)
             X = (X/255).astype('float32')
             Y = (Y/255).astype('float32')
-            # y.append(self.labels[ID])
-        X = X[:,:,:, np.newaxis]
-        Y = Y[:,:,:, np.newaxis]
-        # return X, keras.utils.to_categorical(y, num_classes=10)
         return X, Y
-
+input_shape = (512, 512, 3)
 n_classes = 10
-input_shape = (28, 28)
-model = Sequential()
-model.add(Conv2D(32, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=(28, 28 , 1)))
-model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(n_classes, activation='softmax'))
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.Adam(),
-              metrics=['accuracy'])
-
-train_generator = DataGenerator(x_train, y_train, batch_size = 2, dim = input_shape,
- n_classes=10, shuffle=True)
-val_generator = DataGenerator(x_test, y_test, batch_size=2, dim = input_shape, 
-n_classes= n_classes, shuffle=True)
-
+train_generator = DataGenerator(train_path, y_train, batch_size = 2, dim = input_shape,
+ n_classes=10, shuffle=True, src_folder='gen/', tar_folder='target/')
 
 print(train_generator.__getitem__(0)[0].shape)
-model.fit_generator(
- train_generator,
- steps_per_epoch=len(train_generator),
- epochs=10,
- validation_data=val_generator,
- validation_steps=len(val_generator))
+print(len(train_generator))
+
+for i in tqdm(range(len(train_generator))):
+  src = train_generator[i][0]
+  tar = train_generator[i][1]
+  print(src.shape, tar.shape)
